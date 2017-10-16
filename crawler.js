@@ -145,20 +145,18 @@ exports.crawl = function(website, depth)
 		  
 		  var links = getLinks(website, loadedBody);
 		  
-		  var iterator = 0
-		  
-		  while(iterator < links.length)
+		  for(l in links)
 		  {
-			var next = links[iterator];
+			var next = links[l];
 			if(!isQueued(next))
 			{
 				// Queue all the urls in the page
-				exports.queue(next, function()
+				exports.queue(next, function(url)
 				{
-					exports.crawl(next, depth + 1);
+					console.log("Calling " + url);
+					exports.crawl(url, depth + 1);
 				});
 			}
-			iterator++;
 		  }
 		  /*
 		  for(l in links)
@@ -310,33 +308,39 @@ function processQueue()
 	// Process the queue from the first index
 	var firstInQueue = queuedUrls.shift();
 	console.log("============================================================");
-	console.log(firstInQueue);
-	if(firstInQueue != null)
+	if(typeof firstInQueue != 'undefined')
 	{
-		hasCrawled(firstInQueue.url, function(found)
+		console.log(firstInQueue);
+		if(firstInQueue != null)
 		{
-			if(!found)
+			hasCrawled(firstInQueue.url, function(found)
 			{
 				try
 				{
-					console.log("Processing " + firstInQueue.url);
-					addCrawl(firstInQueue.url, function()
+					if(!found)
 					{
-						console.log("done");
-						firstInQueue.call();
-					});
+							console.log("Processing " + firstInQueue.url);
+							addCrawl(firstInQueue.url, function()
+							{
+								firstInQueue.call(firstInQueue.url);
+							});
+						
+						setTimeout(processQueue, 2000);
+					} else
+					{
+						console.log("Discarding duplicate " + firstInQueue.url);
+						setTimeout(processQueue, 10);
+					}
+				
 				} catch(err)
 				{
-					
+
 				}
-			} else
-			{
-				console.log("Discarding duplicate " + firstInQueue.url);
-			}
-			
-			setTimeout(processQueue, 2000);
-		});
+				
+			});
+		}
 	}
+	//setTimeout(processQueue, 10);
 }
 
 setTimeout(processQueue, 3000);
